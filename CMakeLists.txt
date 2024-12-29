@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.16)
 
-set(LANGUAGES CXX)
+set(LANGUAGES C CXX)
 project(
-  CPP_TEMPLATE
+  SEED_FINDER
   VERSION 1.0
-  DESCRIPTION "A C++ template"
+  DESCRIPTION "A minecraft seed finder"
   LANGUAGES ${LANGUAGES})
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS on)
@@ -20,64 +20,26 @@ endif()
 # Dependencies fetching
 include(FetchContent)
 
-# CROW (api)
-FetchContent_Declare(
-  Crow
-  GIT_REPOSITORY https://github.com/CrowCpp/Crow
-  GIT_TAG v1.2.0)
-
 # Ctest
 FetchContent_Declare(
   googletest
   GIT_REPOSITORY https://github.com/google/googletest.git
   GIT_TAG f8d7d77c06936315286eb55f8de22cd23c188571)
-FetchContent_MakeAvailable(Crow googletest)
-
-# # Raylib
-set(RAYLIB_VERSION 5.5)
-find_package(raylib ${RAYLIB_VERSION} QUIET)
-if(NOT raylib_FOUND)
-  message(STATUS "Raylib (C) not found, downloading latest
-version")
-
-  FetchContent_Declare(
-    raylib
-    DOWNLOAD_EXTRACT_TIMESTAMP OFF
-    URL https://github.com/raysan5/raylib/archive/refs/tags/${RAYLIB_VERSION}.tar.gz
-        SYSTEM)
-
-  FetchContent_MakeAvailable(raylib)
-
-endif()
-
-# raylib-cpp
-if(NOT raylib_cpp_FOUND)
-  message(STATUS "Raylib_cpp (C++) not
-found, downloading latest version")
-  FetchContent_Declare(
-    raylib_cpp
-    GIT_REPOSITORY https://github.com/RobLoach/raylib-cpp.git
-    GIT_TAG master
-    GIT_SHALLOW 1
-    SYSTEM)
-  FetchContent_MakeAvailable(raylib_cpp)
-endif()
+FetchContent_MakeAvailable(googletest)
 
 # ##############################################################################
 # Targets
 
 set(PROJECT_APP ${PROJECT_NAME}_app)
-set(PROJECT_LIB ${PROJECT_NAME}_lib)
 
-add_library(${PROJECT_LIB} src/utils.cpp)
-add_executable(${PROJECT_APP} src/main.cpp)
+add_executable(${PROJECT_APP} src/find_biome.c)
 
-target_include_directories(${PROJECT_LIB} PUBLIC include/)
+target_include_directories(${PROJECT_APP} PUBLIC cubiomes/ include/)
 
 # ##############################################################################
 
 add_library(common INTERFACE)
-target_compile_features(common INTERFACE cxx_std_20)
+target_compile_features(common INTERFACE c_std_23 cxx_std_23)
 
 # Optional IPO. Do not use IPO if it's not supported by compiler.
 include(CheckIPOSupported)
@@ -87,9 +49,8 @@ check_ipo_supported(
   LANGUAGES ${LANGUAGES})
 if(result)
   message(STATUS "IPO is supported")
-  # TODO: verify if IPO should be enabled
-  # set_target_properties(${PROJECT_LIB} PROPERTIES INTERPROCEDURAL_OPTIMIZATION
-  # TRUE)
+  # TODO: verify if IPO should be enabled set_target_properties(${PROJECT_LIB}
+  # PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
 else()
   message(WARNING "IPO is not supported")
 endif()
@@ -104,7 +65,7 @@ target_compile_options(
     $<$<CXX_COMPILER_ID:Clang>:-Weverything>
     $<$<CXX_COMPILER_ID:GCC>:-fconcepts-diagnostics-depth=3>
     $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:
-    -Werror
+    # $<$<COMPILE_LANGUAGE:CXX>:-Werror>
     -Wall
     -Wextra
     -Wpedantic
@@ -156,10 +117,10 @@ target_link_options(
 # Threads needed in gcc
 set(THREADS_HAVE_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED QUIET)
-target_link_libraries(${PROJECT_LIB} PUBLIC Threads::Threads)
+target_link_libraries(${PROJECT_APP} PUBLIC Threads::Threads)
 
 # config
-target_link_libraries(${PROJECT_LIB} PUBLIC common)
+target_link_libraries(${PROJECT_APP} PUBLIC common)
 
 # ##############################################################################
 # libraries linking
@@ -167,21 +128,21 @@ target_link_libraries(${PROJECT_LIB} PUBLIC common)
 # SpdLog
 find_package(spdlog QUIET)
 if(spdlog_FOUND)
-  target_link_libraries(${PROJECT_LIB} PUBLIC spdlog)
+    target_link_libraries(${PROJECT_APP} PUBLIC spdlog)
 else()
   # Only use this if spdlog is not installed on your system
   message(STATUS "SpdLog not found, using bundled version")
-  target_include_directories(${PROJECT_LIB} SYSTEM
+    target_include_directories(${PROJECT_APP} SYSTEM
                              PUBLIC ${CMAKE_SOURCE_DIR}/libs/spdlog/)
 endif()
-target_compile_definitions(${PROJECT_LIB} PUBLIC SPDLOG_USE_STD_FORMAT)
+target_compile_definitions(${PROJECT_APP} PUBLIC SPDLOG_USE_STD_FORMAT)
 #
 # link fetched libraries
-target_link_libraries(${PROJECT_LIB} PUBLIC raylib raylib_cpp Crow::Crow common)
+target_link_libraries(${PROJECT_APP} PUBLIC common)
 
-# ##############################################################################
-# link to executables
-target_link_libraries(${PROJECT_APP} PRIVATE ${PROJECT_LIB})
+  add_subdirectory(cubiomes)
+target_link_libraries(${PROJECT_APP} PUBLIC cubiomes)
+
 
 # ##############################################################################
 # GTEST setup

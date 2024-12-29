@@ -41,7 +41,7 @@ Diagnostics:
 ---
 # Fragment specific to C++ source files
 If:
-  PathMatch: [.*\.cpp, .*\.hpp, .*\.h]
+  PathMatch: [.*\.cpp, .*\.hpp]
 CompileFlags:
   Add:
     - "-std=c++20"
@@ -57,13 +57,11 @@ CompileFlags:
     - "-Wno-zero-as-null-pointer-constant"
     - "-Wno-c++20-compat"
     - "-Wno-vla-extension"
-# ---
-# If:
-#     PathMatch: [.*\.c, .*\.h]
-#     # uncomment to use .h files as c++ headers
-#     # PathMatch: [.*\.c]
-# CompileFlags:
-#     Add:
-#         - "-xc"
-#         - "std=c99"
-#
+---
+If:
+    PathMatch: [.*\.c, .*\.h]
+CompileFlags:
+    Add:
+        - "-xc"
+        - -std=c23
+        - -Wno-declaration-after-statement

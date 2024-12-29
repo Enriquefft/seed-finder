@@ -23,7 +23,7 @@ int main()
         if (biomeID == mushroom_fields)
         {
             printf("Seed %" PRId64 " has a Mushroom Fields biome at "
-                "block position (%d, %d).\n", (int64_t) seed, x, z);
+    "block position (%d, %d).\n", (int64_t) seed, x, z);
             break;
         }
     }
