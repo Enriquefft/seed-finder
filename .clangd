@@ -19,6 +19,7 @@ Diagnostics:
       ]
     Remove: [
         # modernize-use-trailing-return-type,
+        bugprone-easily-swappable-parameters,
 
         # Redundant aliases
         hicpp-avoid-c-arrays,
